@@ -130,7 +130,7 @@ namespace TelegramBot
             {
                 await Bot.SendChatActionAsync(message.Chat.Id, ChatAction.UploadPhoto);
 
-                const string file = @"<FilePath>";
+                const string file = @"Photo.jpg";
 
                 var fileName = file.Split('\\').Last();
 
