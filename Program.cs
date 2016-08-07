@@ -17,7 +17,7 @@ namespace TelegramBot
         private static readonly TelegramBotClient Bot = new TelegramBotClient("245637405:AAEsuVYs2RsulYb7eCeqKJFw0sGkxHl0wRk");
 
         public static void Main(string[] args)
-        {
+        {            
             Bot.OnCallbackQuery += BotOnCallbackQueryReceived;
             Bot.OnMessage += BotOnMessageReceived;
             Bot.OnMessageEdited += BotOnMessageReceived;
@@ -141,6 +141,17 @@ namespace TelegramBot
                     await Bot.SendPhotoAsync(message.Chat.Id, fts, "Nice Picture");
                 }
             }
+            else if (message.Text.StartsWith("/audio"))
+            {
+                await Bot.SendChatActionAsync(message.Chat.Id, ChatAction.UploadAudio);
+
+                const string file = @"ab.mp3";
+                using (var fileStream = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read))
+                {
+                    var fts = new FileToSend(file, fileStream);
+                    await Bot.SendAudioAsync(message.Chat.Id, fts, 5, "you", "ab");
+                }
+            }
             else if (message.Text.StartsWith("/request")) // request location or contact
             {
                 var keyboard = new ReplyKeyboardMarkup(new[]
@@ -157,17 +168,28 @@ namespace TelegramBot
 
                 await Bot.SendTextMessageAsync(message.Chat.Id, "Who or Where are you?", replyMarkup: keyboard);
             }
-            else
+            else if (message.Text.StartsWith("/"))
             {
                 var usage = @"Usage:
-/inline   - send inline keyboard
-/keyboard - send custom keyboard
-/photo    - send a photo
-/request  - request location or contact
-";
+                    type chords and press send, like: ccdb
+                ";
 
                 await Bot.SendTextMessageAsync(message.Chat.Id, usage,
                     replyMarkup: new ReplyKeyboardHide());
+            }
+            else
+            {
+                var outputFileName = string.Format("{0}.mp3", message.Text);
+                var combiner = new AudioCombiner("chords");
+                combiner.Combine(outputFileName, message.Text.ToCharArray().Select(l => string.Format("{0}.mp3", l)));
+
+                await Bot.SendChatActionAsync(message.Chat.Id, ChatAction.UploadAudio);
+
+                using (var fileStream = new FileStream("chords/" + outputFileName, FileMode.Open, FileAccess.Read, FileShare.Read))
+                {
+                    var fts = new FileToSend(outputFileName, fileStream);
+                    await Bot.SendAudioAsync(message.Chat.Id, fts, 1 * message.Text.Length, "you", message.Text);
+                }                
             }
         }
 

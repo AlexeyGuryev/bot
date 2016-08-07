@@ -2,7 +2,9 @@
   "version": "1.0.0-*",
   "buildOptions": {
     "emitEntryPoint": true,
-    "copyToOutput": "Photo.jpg"
+    "copyToOutput": {
+      "include": [ "chords/*", "Photo.jpg" ]
+    }
   },
 
   "dependencies": {
