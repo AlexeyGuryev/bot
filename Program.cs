@@ -11,10 +11,14 @@ namespace TelegramBot
 {
     public class Program
     {
+        private const int MAX_INPUT_MESSAGE_LENGTH = 200;
         private static readonly TelegramBotClient Bot = new TelegramBotClient("245637405:AAEsuVYs2RsulYb7eCeqKJFw0sGkxHl0wRk");
+        private static string _path;
 
         public static void Main(string[] args)
-        {            
+        {
+            _path = "chords";
+
             Bot.OnCallbackQuery += BotOnCallbackQueryReceived;
             Bot.OnMessage += BotOnMessageReceived;
             Bot.OnMessageEdited += BotOnMessageReceived;
@@ -41,32 +45,33 @@ namespace TelegramBot
 
             if (message == null || message.Type != MessageType.TextMessage) return;
 
-            var parser = new ChordParser(message.Text);
-            if (parser.GetChordNames().Any())
+            if (message.Text.Length <= MAX_INPUT_MESSAGE_LENGTH)
             {
-                var outputFileName = string.Format("{0}.mp3", message.Text);
-                var combiner = new AudioCombiner("chords");
-
-                combiner.Combine(outputFileName,
-                    parser.GetChordNames().Select(l => string.Format("{0}.mp3", l)));
-
-                await Bot.SendChatActionAsync(message.Chat.Id, ChatAction.UploadAudio);
-
-                using (
-                    var fileStream = new FileStream("chords/" + outputFileName, FileMode.Open, FileAccess.Read,
-                        FileShare.Read))
+                var chordParser = new ExistChordParser(_path);
+                var extractor = new ChordExtractor(chordParser, message.Text);
+                var chords = extractor.GetChords();
+                if (chords.Any())
                 {
-                    var fts = new FileToSend(outputFileName, fileStream);
-                    await Bot.SendAudioAsync(message.Chat.Id, fts, 0, "Great Author", message.Text);
+                    var composeName = string.Join(string.Empty, chords.Select(c => c.Name));
+                    var outputFileName = composeName + ".mp3";
+                    var combiner = new AudioCombiner(_path);
+
+                    combiner.Combine(outputFileName, chords.Select(c => c.FileName));
+
+                    await Bot.SendChatActionAsync(message.Chat.Id, ChatAction.UploadAudio);
+
+                    using (var fileStream = new FileStream("chords/" + outputFileName, FileMode.Open, FileAccess.Read, FileShare.Read))
+                    {
+                        var fts = new FileToSend(outputFileName, fileStream);
+                        await Bot.SendAudioAsync(message.Chat.Id, fts, 0, message.Chat.Username, composeName);
+                        return;
+                    }
                 }
             }
-            else
-            {
-                var usage = @"Usage: Just type chords and press send, like: CmCDDm or cmcddm or cm c d Dm";
+            var usage = @"Usage: Just type chords and press send, like: CmCDDm or cmcddm or cm c d Dm";
 
-                await Bot.SendTextMessageAsync(message.Chat.Id, usage,
-                    replyMarkup: new ReplyKeyboardHide());
-            }
+            await Bot.SendTextMessageAsync(message.Chat.Id, usage,
+                replyMarkup: new ReplyKeyboardHide());
         }
 
         private static async void BotOnCallbackQueryReceived(object sender, CallbackQueryEventArgs callbackQueryEventArgs)

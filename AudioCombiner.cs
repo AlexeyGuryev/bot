@@ -5,7 +5,7 @@ namespace TelegramBot
 {
     public class AudioCombiner
     {
-        private string _path;
+        private readonly string _path;
 
         public AudioCombiner(string path)
         {
@@ -18,7 +18,7 @@ namespace TelegramBot
             {
                 foreach (var filename in filenames)
                 {
-                    var buffer = File.ReadAllBytes(Path.Combine(_path, filename));
+                    var buffer = File.ReadAllBytes(filename);
                     fs.Write(buffer, 0, buffer.Length);
                 }
                 fs.Flush();
