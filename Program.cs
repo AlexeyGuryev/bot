@@ -45,8 +45,13 @@ namespace TelegramBot
 
             if (message == null || message.Type != MessageType.TextMessage) return;
 
-            if (message.Text.Length <= MAX_INPUT_MESSAGE_LENGTH)
+            if (message.Text.Length > MAX_INPUT_MESSAGE_LENGTH)
             {
+	        var usage = @"Sorry, your message too long for me :(";
+                await Bot.SendTextMessageAsync(message.Chat.Id, usage, replyMarkup: new ReplyKeyboardHide());
+            }
+            else
+            { 
                 var chordParser = new ExistChordParser(_path);
                 var extractor = new ChordExtractor(chordParser, message.Text);
                 var chords = extractor.GetChords();
@@ -64,15 +69,15 @@ namespace TelegramBot
                     {
                         var fts = new FileToSend(outputFileName, fileStream);
                         await Bot.SendAudioAsync(message.Chat.Id, fts, 0, message.Chat.Username, composeName);
-                        return;
                     }
                 }
+                else
+                {
+                    var usage = @"Usage: Just type chords and press send, like: CmCDDm or cmcddm or cm c d Dm";
+                    await Bot.SendTextMessageAsync(message.Chat.Id, usage, replyMarkup: new ReplyKeyboardHide());
+                } 
             }
-            var usage = @"Usage: Just type chords and press send, like: CmCDDm or cmcddm or cm c d Dm";
-
-            await Bot.SendTextMessageAsync(message.Chat.Id, usage,
-                replyMarkup: new ReplyKeyboardHide());
-        }
+       }
 
         private static async void BotOnCallbackQueryReceived(object sender, CallbackQueryEventArgs callbackQueryEventArgs)
         {
