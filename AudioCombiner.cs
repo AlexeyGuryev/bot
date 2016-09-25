@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace TelegramBot
@@ -14,14 +15,21 @@ namespace TelegramBot
 
         public void Combine(string outputFilename, IEnumerable<string> filenames)
         {
-            using (var fs = File.OpenWrite(Path.Combine(_path, outputFilename)))
+            try
             {
-                foreach (var filename in filenames)
+                using (var fs = File.OpenWrite(Path.Combine(_path, outputFilename)))
                 {
-                    var buffer = File.ReadAllBytes(filename);
-                    fs.Write(buffer, 0, buffer.Length);
+                    foreach (var filename in filenames)
+                    {
+                        var buffer = File.ReadAllBytes(filename);
+                        fs.Write(buffer, 0, buffer.Length);
+                    }
+                    fs.Flush();
                 }
-                fs.Flush();
+            }
+            catch (IOException exception)
+            {
+                Console.WriteLine("Error combine {0} from {1}. {2}", outputFilename, filenames, exception);
             }
         }
     }
