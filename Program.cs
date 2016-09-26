@@ -61,7 +61,7 @@ namespace TelegramBot
                     var outputFileName = composeName + ".mp3";
                     var combiner = new AudioCombiner(_path);
 
-                    combiner.Combine(outputFileName, chords.Select(c => c.FileName));
+                    combiner.Combine(outputFileName, chords.Select(c => c.FileName).ToList());
 
                     await Bot.SendChatActionAsync(message.Chat.Id, ChatAction.UploadAudio);
 
